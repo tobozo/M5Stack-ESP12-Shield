@@ -1,12 +1,10 @@
 # ESP12 Flasher for M5Stack-ESP12-Shield
 
-<img src=https://raw.githubusercontent.com/tobozo/M5Stack-ESP12-Shield/master/doc/esp12.jpg>
 <img src=https://raw.githubusercontent.com/tobozo/M5Stack-ESP12-Shield/master/doc/ESP12-Shield.jpg>
-
-
 
 PIN Mapping:
 ============
+
 
          M5Stack | ESP12
      ------------+------------
@@ -19,6 +17,8 @@ PIN Mapping:
             3.3v | CH_PD (EN)
              GND | GND
              GND | D15
+             
+<img src=https://raw.githubusercontent.com/tobozo/M5Stack-ESP12-Shield/master/doc/esp12.jpg>
 
 Usage:
 ======
