@@ -1,7 +1,7 @@
 # ESP12 Flasher for M5Stack-ESP12-Shield
 
-<img src=https://raw.githubusercontent.com/tobozo/M5Stack-ESP12-Shield/doc/master/esp12.jpg>
-<img src=https://raw.githubusercontent.com/tobozo/M5Stack-ESP12-Shield/doc/master/ESP12-Shield.jpg>
+<img src=https://raw.githubusercontent.com/tobozo/M5Stack-ESP12-Shield/master/doc/esp12.jpg>
+<img src=https://raw.githubusercontent.com/tobozo/M5Stack-ESP12-Shield/master/doc/ESP12-Shield.jpg>
 
 
 
