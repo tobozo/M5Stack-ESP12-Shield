@@ -20,13 +20,22 @@ PIN Mapping:
              
 <img src=https://raw.githubusercontent.com/tobozo/M5Stack-ESP12-Shield/master/doc/esp12.jpg>
 
-Usage:
-======
+Using the Arduino IDE:
+======================
 
-- Upload this sketch on the M5Stack
-- Change boards to ESP8266
-- Open your ESP8266 sketch
-- Hit the Upload button
+   - Compile & Upload this sketch on the M5Stack
+   - Change board to ESP8266
+   - Set Baudrate to "115200"
+   - Set Flash Mode to "DOUT"
+   - Set Reset Method to "no dtr (aka ck)"
+   - Open your ESP8266 sketch
+   - Hit the Button B on the M5 so the ESP8266 waits for flashing
+   - Hit the Upload button
 
 
 Also acts as a serial bridge (115200) after flash timeout.
+
+ESP8266 Flash settings
+======================
+
+![image](https://user-images.githubusercontent.com/1893754/100287790-9efd1f80-2f75-11eb-856f-7b2350530cc3.png)
