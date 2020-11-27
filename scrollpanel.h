@@ -177,7 +177,7 @@ void scrollLinePushChar( char c, uint16_t color=TFT_GREEN )
   scrollLine[scrollLineBufferPos] = c;
   uint8_t newPos = chunkScroll( waitdelay, color );
 
-  if( newPos > lineCharBufferWidth /*|| c == '\n'*/) {
+  if( newPos > lineCharBufferWidth ) {
     scrollText( scrollLine, waitdelay, color );
     scrollLine[0] = '\0';
     scrollLineBufferPos = 0;

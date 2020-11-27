@@ -172,6 +172,7 @@ void setup()
 {
   Serial.begin(115200);
   ESP12Serial.begin(115200);
+  ESP12Serial.setRxBufferSize(4096); // big buffer to avoid crashes
 
   M5.begin();
 
