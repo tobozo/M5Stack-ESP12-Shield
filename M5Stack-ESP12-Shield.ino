@@ -81,6 +81,8 @@ bool scrollPanelIsActive = false;
 bool isflashon = false;
 static uint16_t laststatus = 0;
 static int baudRate = 115200;
+static uint32_t rxbytes = 0;
+static uint32_t txbytes = 0;
 
 
 void displayMsg(const char* title= "", const char* msg = "")
@@ -118,7 +120,7 @@ void displayComStatus( uint16_t color )
     tft.fillCircle( 6, 6, 5, color );
   }
   if( ! bg_rendered ) {
-    displayScrollTitle( baudRate, TFT_WHITE );
+    displayScrollTitle( baudRate, rxbytes, txbytes, TFT_WHITE );
   }
 }
 
@@ -196,7 +198,6 @@ void setup()
   start_time = millis();
 
   enableFlashMode();
-
 }
 
 
@@ -208,7 +209,7 @@ void loop()
   while (ESP12Serial.available()) {
     char c = ESP12Serial.read();
     Serial.print(c);
-
+    rxbytes++;
     if( intro_done ) {
       if(! scrollPanelIsActive || bg_rendered ) {
         //ignore_timeout = true;
@@ -226,6 +227,7 @@ void loop()
   while (Serial.available()) {
     char c = Serial.read();
     ESP12Serial.print(c);
+    txbytes++;
     last_activity = millis();
     displayComStatus( TFT_RED );
   }

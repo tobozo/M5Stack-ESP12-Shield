@@ -6,6 +6,8 @@ char *scrollLineBuf = new char[lineCharBufferWidth+1];
 uint8_t scrollLineBufferPos = 0;
 #define TFT_LIGHTGREY tft.color565(192,192,192)
 static int lastBaudRate = 0;
+static uint32_t lastRxBytes = 0;
+static uint32_t lastTxBytes = 0;
 
 const int textSize = 1; // scrolled text size
 const int TFA = 14;
@@ -63,20 +65,32 @@ void scroll_lines( uint32_t amount, uint32_t waitdelay=10 )
 
 
 
-void displayScrollTitle( int baudRate, int32_t bgcolor=TFT_WHITE, bool force = false )
+void displayScrollTitle( int baudRate, uint32_t rxBytes, uint32_t txBytes, int32_t bgcolor=TFT_WHITE, bool force = false )
 {
+
+  if( bgcolor < 0 ) {
+    tft.setTextColor( TFT_BLACK ); // transparent
+  } else {
+    tft.setTextColor( TFT_BLACK, bgcolor);
+  }
+  tft.setTextDatum( ML_DATUM );
+  tft.setFont( nullptr );
+  tft.setTextSize( 1 );
+
   if( force || lastBaudRate != baudRate ) {
     lastBaudRate = baudRate;
-    if( bgcolor < 0 ) {
-      tft.setTextColor( TFT_BLACK ); // transparent
-    } else {
-      tft.setTextColor( TFT_BLACK, bgcolor);
-    }
-    tft.setTextDatum( ML_DATUM );
-    tft.setFont( nullptr );
-    tft.setTextSize( 1 );
     tft.setCursor( 18, 6 );
     tft.printf("%d   ", baudRate);
+  }
+  if( force || rxBytes != lastRxBytes ) {
+    lastRxBytes = rxBytes;
+    tft.setCursor( 100, 6 );
+    tft.printf("RX:%d ", rxBytes );
+  }
+  if( force || txBytes != lastTxBytes ) {
+    lastTxBytes = txBytes;
+    tft.setCursor( 200, 6 );
+    tft.printf("TX:%d ", txBytes );
   }
 }
 
@@ -87,7 +101,7 @@ void scrollReset()
   tft.fillRect( 0, 0, tft.width(), areaHeight+blockHeight+TFA, TFT_BLACK ); // clear zone
   tft.drawJpg( doc_intrologo_jpg, doc_intrologo_jpg_len, 0,  TFA-1); // intro bitmap
   tft.fillRect( 0, 0, tft.width(), TFA-1, TFT_WHITE ); // titlebar background fill
-  displayScrollTitle( lastBaudRate, TFT_WHITE, true ); // put some text in the titlebar
+  displayScrollTitle( lastBaudRate, lastRxBytes, lastTxBytes, TFT_WHITE, true ); // put some text in the titlebar
   tft.fillRect( 0, TFA-1, hmargin, areaHeight+blockHeight, TFT_BLACK ); // scrollzone marginleft
   tft.fillRect( tft.width()-(hmargin+1), TFA-1, hmargin, areaHeight+blockHeight, TFT_BLACK ); // scrollzone marginright
   tft.drawRect( 0, TFA-1, tft.width(), areaHeight+blockHeight-4,   TFT_DARKGREY ); // scrollzone border
