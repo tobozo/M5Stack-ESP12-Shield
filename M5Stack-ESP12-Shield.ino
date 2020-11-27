@@ -72,24 +72,29 @@
 
 HardwareSerial ESP12Serial(2); // ESP32 UART2 GPIO-16 ( RXD2 )
 
+unsigned long last_activity = 0;
 unsigned long start_time = 0;
+bool intro_done = false;
 bool ignore_timeout = false; // UI logic: wait for timeout before showing UI menu
 bool bg_rendered = false;
 bool scrollPanelIsActive = false;
 bool isflashon = false;
+static uint16_t laststatus = 0;
+static int baudRate = 115200;
 
 
 void displayMsg(const char* title= "", const char* msg = "")
 {
-  tft.fillRect(0, 190, 319, 239, TFT_BLACK);
+  tft.fillRect(0, 196, 319, 48, TFT_BLACK);
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
   tft.setTextDatum( TC_DATUM );
   tft.setFont( &Font4 );
   tft.setTextSize( 1 );
-  tft.drawString(title, tft.width() / 2, 194);
+  tft.drawString(title, tft.width() / 2, 196);
   tft.setTextSize( 0.75 );
-  tft.drawString(msg, tft.width() / 2, 220);
+  tft.drawString(msg, tft.width() / 2, 222);
 }
+
 
 void displayIntro()
 {
@@ -105,12 +110,16 @@ void displayIntro()
   tft.drawString(F("Copyright 2018-2020 tobozo"), tft.width() / 2, 145);
 }
 
-static uint16_t laststatus = 0;
+
 void displayComStatus( uint16_t color )
 {
-  if( laststatus == color ) return;
-  laststatus = color;
-  tft.fillCircle( 10, tft.height()-14, 5, color );
+  if( laststatus != color ) {
+    laststatus = color;
+    tft.fillCircle( 6, 6, 5, color );
+  }
+  if( ! bg_rendered ) {
+    displayScrollTitle( baudRate, TFT_WHITE );
+  }
 }
 
 
@@ -167,7 +176,7 @@ void setup()
   M5.begin();
 
   scrollSetup();
-  scrollPanelIsActive = true;
+  //scrollPanelIsActive = true;
 
   displayIntro();
 
@@ -182,10 +191,14 @@ void setup()
     ESP.restart();
   }
 
+  last_activity = millis();
   start_time = millis();
 
   enableFlashMode();
+
 }
+
+
 
 
 void loop()
@@ -195,23 +208,24 @@ void loop()
     char c = ESP12Serial.read();
     Serial.print(c);
 
-    if(! scrollPanelIsActive ) {
-      //ignore_timeout = true;
-      scrollPanelIsActive = true;
-      scrollReset();
-    }
-    if( scrollPanelIsActive ) {
+    if( intro_done ) {
+      if(! scrollPanelIsActive || bg_rendered ) {
+        //ignore_timeout = true;
+        scrollPanelIsActive = true;
+        scrollReset();
+        bg_rendered = false;
+      }
       scrollLinePushChar( c );
+      displayComStatus( TFT_GREEN );
     }
-    displayComStatus( TFT_GREEN );
-    start_time = millis();
+    last_activity = millis();
   }
 
   // M5Stack (or Arduino IDE forwarded) talking to the ESP12
   while (Serial.available()) {
     char c = Serial.read();
     ESP12Serial.print(c);
-    start_time = millis();
+    last_activity = millis();
     displayComStatus( TFT_RED );
   }
 
@@ -221,40 +235,53 @@ void loop()
 
   if ( M5.BtnA.wasPressed()) {
     ignore_timeout = false;
-    start_time = millis();
+    last_activity = millis();
     doResetESP();
-    //scrollSetup();
-    scrollPanelIsActive = true;
-    scrollReset();
     bg_rendered = false;
-  } else if ( M5.BtnB.wasPressed()) {
-    enableFlashMode();
+  } else if ( M5.BtnB.wasPressed()) { // toggle flash mode
+    if( isflashon ) {
+      doResetESP();
+      isflashon = false;
+      bg_rendered = false;
+    } else {
+      enableFlashMode();
+      isflashon = true;
+    }
     ignore_timeout = true;
   } else if ( M5.BtnC.wasPressed()) {
-    if( isflashon ) {
-      flashOff();
-    } else {
-      flashOn();
+    // TODO: toggle Serial1 speed
+    switch( baudRate ) {
+      case 115200: baudRate = 57600 ; break;/////////////////////
+      case 57600 : baudRate = 38400 ; break;
+      case 38400 : baudRate = 28800 ; break;
+      case 28800 : baudRate = 14400 ; break;
+      case 14400 : baudRate = 9600  ; break;
+      case 9600  : baudRate = 115200; break;
+      default    : baudRate = 115200; break;
     }
-    isflashon = !isflashon;
+    ESP12Serial.end();
+    delay( 100 );
+    ESP12Serial.begin( baudRate );
+    displayMsg("Baud Rate", String( baudRate ).c_str() );
     ignore_timeout = true;
   }
 
   if (!ignore_timeout) {
-    if (start_time + FLASH_TIMEOUT < millis()) {
+    if (last_activity + FLASH_TIMEOUT < millis()) {
       ignore_timeout = true;
-      //setupScrollArea( 0, 0, 0 ); // reset scroll area
       scrollReset();
       scrollPanelIsActive = false;
       flashOff();
-      //doResetESP();
       displayMsg("IDLE MODE", "Reset                Flash               Toggle");
       if(!bg_rendered) {
-        // drawing the JPG earlier seems to break flashing process
-        // M5 bug or heap problem ?
         tft.drawJpg(esp12_jpg, esp12_jpg_len);
         bg_rendered = true;
       }
+    }
+  }
+  if (! intro_done ) {
+    if( millis()-start_time > 2000 ) {
+      intro_done = true;
     }
   }
 }
