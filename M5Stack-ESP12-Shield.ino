@@ -59,6 +59,7 @@
 #include <ESP32-Chimera-Core.h> // available from the Arduino Library Manager or https://github.com/tobozo/ESP32-Chimera-Core
 #define tft M5.Lcd
 #include <M5StackUpdater.h>     // available from the Arduino Library Manager or https://github.com/tobozo/M5Stack-SD-Updater
+#include <Preferences.h>
 #include "esp12.h"
 #include "scrollpanel.h"
 
@@ -71,6 +72,7 @@
 #define FLASH_TIMEOUT 10000 // timeout delay (ms) before acting as a serial bridge
 
 HardwareSerial ESP12Serial(2); // ESP32 UART2 GPIO-16 ( RXD2 )
+Preferences prefs;
 
 unsigned long last_activity = 0;
 unsigned long start_time = 0;
@@ -155,6 +157,7 @@ void doResetESP()
   delay(300);
   resetOff();
   displayMsg("BRIDGE MODE", "Reset done!");
+  isflashon = false;
 }
 
 void enableFlashMode()
@@ -166,20 +169,29 @@ void enableFlashMode()
   delay(100);
   flashOff();
   displayMsg("FLASH MODE", "ESP8266 awaits flashing..");
+  isflashon = true;
 }
 
 
 
 void setup()
 {
-  Serial.begin(115200);
-  ESP12Serial.begin(115200);
-  ESP12Serial.setRxBufferSize(4096); // big buffer to avoid crashes
+  M5.begin(); // this starts serial at 115200
 
-  M5.begin();
+  // retrieve last baud rate if any
+  prefs.begin("ESP12-Shield", true);
+  baudRate = prefs.getUInt("baudRate", 115200 );
+  prefs.end();
+
+  if( baudRate != 115200 ) {
+    Serial.end();
+    Serial.begin( baudRate );
+  }
+
+  ESP12Serial.begin( baudRate );
+  ESP12Serial.setRxBufferSize(8192); // big buffer to avoid crashes
 
   scrollSetup();
-  //scrollPanelIsActive = true;
 
   displayIntro();
 
@@ -210,16 +222,17 @@ void loop()
     char c = ESP12Serial.read();
     Serial.print(c);
     rxbytes++;
-    if( intro_done ) {
+    if( !isflashon ) {
+      // do scrolly animation only when not flashing
       if(! scrollPanelIsActive || bg_rendered ) {
-        //ignore_timeout = true;
+        // render panel title/borders once
         scrollPanelIsActive = true;
         scrollReset();
         bg_rendered = false;
       }
       scrollLinePushChar( c );
-      displayComStatus( TFT_GREEN );
     }
+    displayComStatus( TFT_GREEN );
     last_activity = millis();
   }
 
@@ -253,19 +266,27 @@ void loop()
     ignore_timeout = true;
   } else if ( M5.BtnC.wasPressed()) {
     // TODO: toggle Serial1 speed
+    Serial.printf("old baudrate: %d ", baudRate);
     switch( baudRate ) {
-      case 115200: baudRate = 57600 ; break;/////////////////////
+      case 921600: baudRate = 230400; break;
+      case 230400: baudRate = 115200; break;
+      case 115200: baudRate = 57600 ; break;
       case 57600 : baudRate = 38400 ; break;
       case 38400 : baudRate = 28800 ; break;
       case 28800 : baudRate = 14400 ; break;
       case 14400 : baudRate = 9600  ; break;
-      case 9600  : baudRate = 115200; break;
-      default    : baudRate = 115200; break;
+      case 9600  : baudRate = 921600; break;
+      default    : baudRate = 9600; break;
     }
+    Serial.printf("new baudrate: %d ", baudRate);
     ESP12Serial.end();
     delay( 100 );
     ESP12Serial.begin( baudRate );
     displayMsg("Baud Rate", String( baudRate ).c_str() );
+    // save baud rate to NVS
+    prefs.begin("ESP12-Shield", false);
+    prefs.putUInt("baudRate", baudRate );
+    prefs.end();
     ignore_timeout = true;
   }
 

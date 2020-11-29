@@ -143,6 +143,7 @@ void scrollSetup()
 void scrollText( const char* text, uint32_t waitdelay=10, uint16_t color=TFT_GREEN  )
 {
   if( text[0] == '\0' ) return;
+  tft.startWrite();
   scroll_lines( blockHeight, waitdelay );
   int textVPos = scrollPos + ( areaHeight - blockHeight ); // bottom aligned
   modulo_scroll( textVPos );
@@ -151,6 +152,7 @@ void scrollText( const char* text, uint32_t waitdelay=10, uint16_t color=TFT_GRE
   tft.setTextDatum( TL_DATUM);
   tft.setTextColor(color, TFT_BLACK);
   tft.drawString( text, hmargin, textVPos );
+  tft.endWrite();
 }
 
 
